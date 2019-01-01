@@ -4,8 +4,9 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::*;
+use syn::spanned::Spanned;
 
 #[proc_macro_derive(FromStr, attributes(adhoc))]
 pub fn from_str_derive(input: TokenStream) -> TokenStream {
@@ -18,11 +19,7 @@ pub fn from_str_derive(input: TokenStream) -> TokenStream {
 
     let (regex_string, _regex_span) = extract_regex(&input.attrs);
 
-    let field_idents = get_fields(&input.data);
-    let mut field_names = Vec::new();
-    for ident in field_idents.iter() {
-        field_names.push(ident.to_string());
-    }
+    let (field_ident, parse_expr) = parse_fields(&input.data);
 
     let result = quote! {
         impl #impl_generics ::std::str::FromStr for #name #ty_generics #where_clause {
@@ -40,7 +37,7 @@ pub fn from_str_derive(input: TokenStream) -> TokenStream {
                     }
                 };
 
-                Ok(Self{#(#field_idents: captures.name(#field_names).unwrap().as_str().parse()?,)*})
+                Ok(Self{#(#field_ident: #parse_expr,)*})
             }
         }
     };
@@ -73,14 +70,19 @@ fn extract_regex(attrs: &[Attribute]) -> (String, Span) {
     panic!("No regex found.");
 }
 
-fn get_fields(data: &Data) -> Vec<Ident> {
-    let mut all_fields = Vec::new();
+fn parse_fields(data: &Data) -> (Vec<Ident>, Vec<proc_macro2::TokenStream>) {
+    let mut idents = Vec::new();
+    let mut parse_exprs = Vec::new();
     match *data {
         Data::Struct(ref data_struct) => {
             match data_struct.fields {
                 Fields::Named(ref fields) => {
                     for field in fields.named.iter() {
-                        all_fields.push(field.ident.as_ref().unwrap().clone());
+                        let field_name = &field.ident.as_ref().unwrap().to_string();
+                        idents.push(field.ident.as_ref().unwrap().clone());
+                        parse_exprs.push(quote_spanned! {
+                            field.span() => captures.name(#field_name).unwrap().as_str().parse()?
+                        });
                     }
                 },
                 _ => unimplemented!(),
@@ -88,5 +90,5 @@ fn get_fields(data: &Data) -> Vec<Ident> {
         },
         _ => unimplemented!(),
     }
-    all_fields
+    (idents, parse_exprs)
 }
