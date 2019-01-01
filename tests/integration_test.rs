@@ -13,4 +13,11 @@ fn smoke_test() {
         width: usize,
         height: usize,
     }
+
+    let rect: Rectangle = "#123 @ 3,2: 5x4".parse::<Rectangle>().unwrap();
+    assert_eq!(123, rect.id);
+    assert_eq!(3, rect.x);
+    assert_eq!(2, rect.y);
+    assert_eq!(5, rect.width);
+    assert_eq!(4, rect.height);
 }

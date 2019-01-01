@@ -1,3 +1,5 @@
+#![recursion_limit="128"]
+
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
@@ -9,23 +11,36 @@ use syn::*;
 pub fn from_str_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    println!("{:#?}", input);
+    //println!("{:#?}", input);
 
     let name = input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let (regex_string, _regex_span) = extract_regex(&input.attrs);
 
+    let field_idents = get_fields(&input.data);
+    let mut field_names = Vec::new();
+    for ident in field_idents.iter() {
+        field_names.push(ident.to_string());
+    }
+
     let result = quote! {
         impl #impl_generics ::std::str::FromStr for #name #ty_generics #where_clause {
-            type Err = ();
+            type Err = Box<std::error::Error>;
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 lazy_static::lazy_static! {
                     static ref RE: regex::Regex = regex::Regex::new(#regex_string).unwrap();
                 }
 
-                Ok(Default::default())
+                let captures = match RE.captures(s) {
+                    Some(captures) => captures,
+                    None => {
+                        return Err("input does not match expected format".into());
+                    }
+                };
+
+                Ok(Self{#(#field_idents: captures.name(#field_names).unwrap().as_str().parse()?,)*})
             }
         }
     };
@@ -56,4 +71,22 @@ fn extract_regex(attrs: &[Attribute]) -> (String, Span) {
     }
 
     panic!("No regex found.");
+}
+
+fn get_fields(data: &Data) -> Vec<Ident> {
+    let mut all_fields = Vec::new();
+    match *data {
+        Data::Struct(ref data_struct) => {
+            match data_struct.fields {
+                Fields::Named(ref fields) => {
+                    for field in fields.named.iter() {
+                        all_fields.push(field.ident.as_ref().unwrap().clone());
+                    }
+                },
+                _ => unimplemented!(),
+            }
+        },
+        _ => unimplemented!(),
+    }
+    all_fields
 }
