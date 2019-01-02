@@ -4,7 +4,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::{quote, quote_spanned};
+use quote::{quote, quote_spanned, ToTokens};
 use syn::spanned::Spanned;
 use syn::*;
 
@@ -81,11 +81,21 @@ fn parse_fields(data: &Data) -> (Vec<Ident>, Vec<proc_macro2::TokenStream>) {
         Data::Struct(ref data_struct) => match data_struct.fields {
             Fields::Named(ref fields) => {
                 for field in fields.named.iter() {
+                    let attributes = parse_attributes(&field.attrs);
                     let field_name = &field.ident.as_ref().unwrap().to_string();
+
                     idents.push(field.ident.as_ref().unwrap().clone());
-                    parse_exprs.push(quote_spanned! {
-                        field.span() => captures.name(#field_name).unwrap().as_str().parse()?
-                    });
+
+                    if let Some(expr_call) = attributes.construct_with {
+                        let ts = replace_function_call_arguments(expr_call).into_token_stream();
+                        parse_exprs.push(quote_spanned! {
+                            field.span() => #ts
+                        });
+                    } else {
+                        parse_exprs.push(quote_spanned! {
+                            field.span() => captures.name(#field_name).unwrap().as_str().parse()?
+                        });
+                    }
                 }
             }
             _ => unimplemented!(),
@@ -93,4 +103,79 @@ fn parse_fields(data: &Data) -> (Vec<Ident>, Vec<proc_macro2::TokenStream>) {
         _ => unimplemented!(),
     }
     (idents, parse_exprs)
+}
+
+#[derive(Debug)]
+struct FieldAttributes {
+    construct_with: Option<ExprCall>,
+}
+
+fn parse_attributes(attrs: &[Attribute]) -> FieldAttributes {
+    let mut attributes = FieldAttributes {
+        construct_with: None,
+    };
+
+    for attr in attrs {
+        let meta = attr.parse_meta().unwrap();
+        if meta.name() == "adhoc" {
+            match meta {
+                Meta::List(meta_list) => {
+                    for nested in meta_list.nested.iter() {
+                        match nested {
+                            NestedMeta::Meta(Meta::NameValue(meta_name_value)) => {
+                                // Parse #[adhoc(construct_with = "...")]
+                                if meta_name_value.ident == "construct_with" {
+                                    match meta_name_value.lit {
+                                        Lit::Str(ref lit_str) => {
+                                            let expr: Expr = parse_str(&lit_str.value()).unwrap();
+                                            let expr_call = match expr {
+                                                Expr::Call(expr_call) => expr_call,
+                                                _ => panic!("construct_with must be a function call expression!"),
+                                            };
+                                            attributes.construct_with = Some(expr_call);
+                                        }
+                                        _ => panic!(
+                                            "construct_with must be a function call expression!"
+                                        ),
+                                    }
+                                }
+                            }
+                            _ => continue,
+                        }
+                    }
+                }
+                _ => continue,
+            }
+        }
+    }
+
+    attributes
+}
+
+fn replace_function_call_arguments(mut expr_call: ExprCall) -> ExprCall {
+    let original_args = expr_call.args.clone();
+    expr_call.args = punctuated::Punctuated::new();
+
+    for arg in original_args.iter() {
+        let path = match arg {
+            Expr::Path(path) => &path.path,
+            _ => panic!("Only basic identifiers are supported as function arguments!"),
+        };
+
+        assert_eq!(
+            1,
+            path.segments.len(),
+            "Only basic identifiers are supported as function arguments!"
+        );
+
+        for segment in path.segments.iter() {
+            let ident = segment.ident.to_string();
+            let ts = quote!(captures.name(#ident).unwrap().as_str().parse()?);
+            let expr: Expr = parse2(ts).unwrap();
+            expr_call.args.push(expr);
+            break;
+        }
+    }
+    
+    expr_call
 }
