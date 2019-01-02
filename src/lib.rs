@@ -1,12 +1,12 @@
-#![recursion_limit="128"]
+#![recursion_limit = "128"]
 
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{quote, quote_spanned};
-use syn::*;
 use syn::spanned::Spanned;
+use syn::*;
 
 #[proc_macro_derive(FromStr, attributes(adhoc))]
 pub fn from_str_derive(input: TokenStream) -> TokenStream {
@@ -22,7 +22,7 @@ pub fn from_str_derive(input: TokenStream) -> TokenStream {
     let (field_ident, parse_expr) = parse_fields(&input.data);
 
     let result = quote! {
-        impl #impl_generics ::std::str::FromStr for #name #ty_generics #where_clause {
+        impl #impl_generics std::str::FromStr for #name #ty_generics #where_clause {
             type Err = Box<std::error::Error>;
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -52,12 +52,16 @@ fn extract_regex(attrs: &[Attribute]) -> (String, Span) {
                 Meta::List(meta_list) => {
                     for nested in meta_list.nested.iter() {
                         match nested {
-                            NestedMeta::Meta(Meta::NameValue(meta_name_value)) => if meta_name_value.ident == "regex" {
-                                match meta_name_value.lit {
-                                    Lit::Str(ref lit_str) => return (lit_str.value(), lit_str.span()),
-                                    _ => continue,
+                            NestedMeta::Meta(Meta::NameValue(meta_name_value)) => {
+                                if meta_name_value.ident == "regex" {
+                                    match meta_name_value.lit {
+                                        Lit::Str(ref lit_str) => {
+                                            return (lit_str.value(), lit_str.span());
+                                        }
+                                        _ => continue,
+                                    }
                                 }
-                            },
+                            }
                             _ => continue,
                         }
                     }
@@ -74,19 +78,17 @@ fn parse_fields(data: &Data) -> (Vec<Ident>, Vec<proc_macro2::TokenStream>) {
     let mut idents = Vec::new();
     let mut parse_exprs = Vec::new();
     match *data {
-        Data::Struct(ref data_struct) => {
-            match data_struct.fields {
-                Fields::Named(ref fields) => {
-                    for field in fields.named.iter() {
-                        let field_name = &field.ident.as_ref().unwrap().to_string();
-                        idents.push(field.ident.as_ref().unwrap().clone());
-                        parse_exprs.push(quote_spanned! {
-                            field.span() => captures.name(#field_name).unwrap().as_str().parse()?
-                        });
-                    }
-                },
-                _ => unimplemented!(),
+        Data::Struct(ref data_struct) => match data_struct.fields {
+            Fields::Named(ref fields) => {
+                for field in fields.named.iter() {
+                    let field_name = &field.ident.as_ref().unwrap().to_string();
+                    idents.push(field.ident.as_ref().unwrap().clone());
+                    parse_exprs.push(quote_spanned! {
+                        field.span() => captures.name(#field_name).unwrap().as_str().parse()?
+                    });
+                }
             }
+            _ => unimplemented!(),
         },
         _ => unimplemented!(),
     }
