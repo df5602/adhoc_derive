@@ -1,7 +1,10 @@
 [package]
 name = "adhoc_derive"
 version = "0.1.0"
-authors = ["df5602 <dominik@fankhausers.ch>"]
+authors = ["Dominik Fankhauser <dominik@fankhausers.ch>"]
+description = "Derive FromStr impl based on regex provided via attribute"
+repository = "https://github.com/df5602/adhoc_derive"
+keywords = ["FromStr", "parse", "regex"]
 edition = "2018"
 
 [lib]
