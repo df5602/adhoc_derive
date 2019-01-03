@@ -1,4 +1,5 @@
-### adhoc_derive
+### adhoc_derive [![Latest Version]][crates.io]
+[crates.io]: https://crates.io/crates/adhoc_derive
 -----
 Experimental: Derive FromStr impl based on regex provided via attribute
 
