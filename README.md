@@ -35,6 +35,8 @@ assert_eq!(4, rect.height);
 
 In general, each field of the struct needs to implement `std::str::FromStr` and each field identifier needs to correspond to a named capture group in the regex.
 
+For a more comprehensive guide, refer to [GUIDE.md](GUIDE.md)
+
 ### Limitations
 This crate is experimental and has a lot of rough edges. In no particular order:
 * Only works on structs with named fields (i.e no enums, tuple structs, etc.)
