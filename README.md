@@ -6,7 +6,7 @@ Experimental: Derive FromStr impl based on regex provided via attribute
 Add the following in your Cargo.toml:
 ```
 [dependencies]
-adhoc_derive = { git = "https://github.com/df5602/adhoc_derive" }
+adhoc_derive = "0.1.0"
 lazy_static = "1.2.0"
 regex = "1.1.0"
 ```
