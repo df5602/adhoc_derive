@@ -1,7 +1,8 @@
-### adhoc_derive [![Latest Version]][crates.io]
-[crates.io]: https://crates.io/crates/adhoc_derive
------
+# adhoc_derive &emsp; [![](http://meritbadge.herokuapp.com/adhoc_derive)](https://crates.io/crates/adhoc_derive)
+
 Experimental: Derive FromStr impl based on regex provided via attribute
+
+-----
 
 ### Usage
 Add the following in your Cargo.toml:
