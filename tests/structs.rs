@@ -14,7 +14,7 @@ fn derive_standard_struct() {
         height: usize,
     }
 
-    let rect: Rectangle = "#123 @ 3,2: 5x4".parse::<Rectangle>().unwrap();
+    let rect: Rectangle = "#123 @ 3,2: 5x4".parse().unwrap();
     assert_eq!(123, rect.id);
     assert_eq!(3, rect.x);
     assert_eq!(2, rect.y);
@@ -40,7 +40,7 @@ fn derive_nested_struct() {
         rect: InnerRectangle,
     }
 
-    let rect: OuterRectangle = "#123 @ 3,2: 5x4".parse::<OuterRectangle>().unwrap();
+    let rect: OuterRectangle = "#123 @ 3,2: 5x4".parse().unwrap();
     assert_eq!(123, rect.id);
     assert_eq!(3, rect.rect.x);
     assert_eq!(2, rect.rect.y);
@@ -76,7 +76,7 @@ fn derive_nested_struct_construct_with() {
         rect: InnerRectangle,
     }
 
-    let rect: OuterRectangle = "#123 @ 3,2: 5x4".parse::<OuterRectangle>().unwrap();
+    let rect: OuterRectangle = "#123 @ 3,2: 5x4".parse().unwrap();
     assert_eq!(123, rect.id);
     assert_eq!(3, rect.rect.x);
     assert_eq!(2, rect.rect.y);
@@ -97,7 +97,7 @@ fn derive_struct_with_default_initialization() {
         height: usize,
     }
 
-    let rect: Rectangle = "3,2: 5x4".parse::<Rectangle>().unwrap();
+    let rect: Rectangle = "3,2: 5x4".parse().unwrap();
     assert_eq!(0, rect.id);
     assert_eq!(3, rect.x);
     assert_eq!(2, rect.y);
