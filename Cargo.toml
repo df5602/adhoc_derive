@@ -2,6 +2,7 @@
 name = "adhoc_derive"
 version = "0.1.0"
 authors = ["Dominik Fankhauser <dominik@fankhausers.ch>"]
+license = "MIT"
 description = "Derive FromStr impl based on regex provided via attribute"
 repository = "https://github.com/df5602/adhoc_derive"
 keywords = ["FromStr", "parse", "regex"]
