@@ -31,3 +31,15 @@ assert_eq!(3, rect.x);
 assert_eq!(2, rect.y);
 assert_eq!(5, rect.width);
 assert_eq!(4, rect.height);
+```
+
+In general, each field of the struct needs to implement `std::str::FromStr` and each field identifier needs to correspond to a named capture group in the regex.
+
+### Limitations
+This crate is experimental and has a lot of rough edges. In no particular order:
+* Only works on structs with named fields (i.e no enums, tuple structs, etc.)
+* Doesn't work with generic structs out of the box (it should work if you add the required trait bounds yourself)
+* Not yet implemented: optional patterns, i.e. (...)? => `Option<...>`
+* Not yet implemented: repeating patterns, i.e. (...)* => `Vec<...>`
+* Error handling and especially reporting is basically non-existent
+* Provided regex is not validated at compile-time
