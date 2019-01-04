@@ -27,13 +27,15 @@ use quote::quote_spanned;
 
 #[derive(Debug)]
 pub struct TransformIdents {
-    replaced_expression: Option<Expr>
+    replaced_expression: Option<Expr>,
+    debug: bool
 }
 
 impl TransformIdents {
     pub fn new() -> Self {
         Self {
             replaced_expression: None,
+            debug: false,
         }
     }
 }
@@ -45,7 +47,9 @@ impl VisitMut for TransformIdents {
             self.visit_expr_mut(it);
             if let Some(expr) = self.replaced_expression.take() {
                 **it = expr;
-                println!("Replaced expression in <ExprArray>");
+                if self.debug {
+                    println!("Replaced expression in <ExprArray>");
+                }
             }
         }
     }
@@ -56,7 +60,9 @@ impl VisitMut for TransformIdents {
             self.visit_expr_mut(it);
             if let Some(expr) = self.replaced_expression.take() {
                 **it = expr;
-                println!("Replaced expression in <ExprCall>");
+                if self.debug {
+                    println!("Replaced expression in <ExprCall>");
+                }
             }
         }
     }
@@ -77,7 +83,9 @@ impl VisitMut for TransformIdents {
             self.visit_expr_mut(it);
             if let Some(expr) = self.replaced_expression.take() {
                 **it = expr;
-                println!("Replaced expression in <ExprMethodCall>");
+                if self.debug {
+                    println!("Replaced expression in <ExprMethodCall>");
+                }
             }
         }
     }
@@ -88,7 +96,9 @@ impl VisitMut for TransformIdents {
             self.visit_expr_mut(it);
             if let Some(expr) = self.replaced_expression.take() {
                 **it = expr;
-                println!("Replace expression in <ExprTuple>");
+                if self.debug {
+                    println!("Replace expression in <ExprTuple>");
+                }
             }
         }
     }
@@ -97,12 +107,16 @@ impl VisitMut for TransformIdents {
         self.visit_expr_mut(&mut *expr_binary.left);
         if let Some(expr) = self.replaced_expression.take() {
             *expr_binary.left = expr;
-            println!("Replace expression in <ExprBinary:Left>");
+            if self.debug {
+                println!("Replace expression in <ExprBinary:Left>");
+            }
         }
         self.visit_expr_mut(&mut *expr_binary.right);
         if let Some(expr) = self.replaced_expression.take() {
             *expr_binary.right = expr;
-            println!("Replace expression in <ExprBinary:Right>");
+            if self.debug {
+                println!("Replace expression in <ExprBinary:Right>");
+            }
         }
     }
 
@@ -110,7 +124,9 @@ impl VisitMut for TransformIdents {
         self.visit_expr_mut(&mut *expr_unary.expr);
         if let Some(expr) = self.replaced_expression.take() {
             *expr_unary.expr = expr;
-            println!("Replace expression in <ExprUnary>");
+            if self.debug {
+                println!("Replace expression in <ExprUnary>");
+            }
         }
     }
 
@@ -118,7 +134,9 @@ impl VisitMut for TransformIdents {
         self.visit_expr_mut(&mut *expr_cast.expr);
         if let Some(expr) = self.replaced_expression.take() {
             *expr_cast.expr = expr;
-            println!("Replace expression in <ExprCast>");
+            if self.debug {
+                println!("Replace expression in <ExprCast>");
+            }
         }
     }
 
@@ -126,7 +144,9 @@ impl VisitMut for TransformIdents {
         self.visit_expr_mut(&mut *expr_if.cond);
         if let Some(expr) = self.replaced_expression.take() {
             *expr_if.cond = expr;
-            println!("Replace expression in <ExprIf:Cond>");
+            if self.debug {
+                println!("Replace expression in <ExprIf:Cond>");
+            }
         }
         
         self.visit_block_mut(&mut expr_if.then_branch);
@@ -144,7 +164,9 @@ impl VisitMut for TransformIdents {
                 self.visit_expr_mut(expr);
                 if let Some(new_expr) = self.replaced_expression.take() {
                     *expr = new_expr;
-                    println!("Replace expression in <Stmt:Expr>");
+                    if self.debug {
+                        println!("Replace expression in <Stmt:Expr>");
+                    }
                 }
             }
         }
@@ -155,14 +177,18 @@ impl VisitMut for TransformIdents {
             self.visit_expr_mut(&mut **it);
             if let Some(expr) = self.replaced_expression.take() {
                 **it = expr;
-                println!("Replace expression in <ExprRange:From>");
+                if self.debug {
+                    println!("Replace expression in <ExprRange:From>");
+                }
             }
         };
         if let Some(ref mut it) = expr_range.to {
             self.visit_expr_mut(&mut **it);
             if let Some(expr) = self.replaced_expression.take() {
                 **it = expr;
-                println!("Replace expression in <ExprRange:To>");
+                if self.debug {
+                    println!("Replace expression in <ExprRange:To>");
+                }
             }
         };
     }
@@ -171,7 +197,9 @@ impl VisitMut for TransformIdents {
         self.visit_expr_mut(&mut *expr_ref.expr);
         if let Some(expr) = self.replaced_expression.take() {
             *expr_ref.expr = expr;
-            println!("Replace expression in <ExprReference>");
+            if self.debug {
+                println!("Replace expression in <ExprReference>");
+            }
         }
     }
 
@@ -197,7 +225,9 @@ impl VisitMut for TransformIdents {
             if field_value.colon_token.is_none() {
                 field_value.colon_token = Some(syn::token::Colon { spans: [field_value.span()]});
             }
-            println!("Replace expression in <FieldValue:Expr>");
+            if self. debug {
+                println!("Replace expression in <FieldValue:Expr>");
+            }
         }
     }
 
@@ -205,13 +235,17 @@ impl VisitMut for TransformIdents {
         self.visit_expr_mut(&mut *expr_paren.expr);
         if let Some(expr) = self.replaced_expression.take() {
             *expr_paren.expr = expr;
-            println!("Replace expression in <ExprParen>");
+            if self.debug {
+                println!("Replace expression in <ExprParen>");
+            }
         }
     }
 
     fn visit_ident_mut(&mut self, ident: &mut Ident) {
         if ident != "None" {
-            println!("Found identifier: {:?}", ident);
+            if self.debug {
+                println!("Found identifier: {:?}", ident);
+            }
 
             let ident_as_string = ident.to_string();
             let ts = quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse()?);
