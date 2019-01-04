@@ -2,7 +2,10 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{quote, quote_spanned, ToTokens};
 use syn::spanned::Spanned;
+use syn::visit_mut::VisitMut;
 use syn::*;
+
+use crate::transform_idents::TransformIdents;
 
 pub fn from_str_derive(input: DeriveInput) -> TokenStream {
     let name = input.ident;
@@ -77,8 +80,11 @@ fn parse_fields(data: &Data) -> (Vec<Ident>, Vec<proc_macro2::TokenStream>) {
 
                     idents.push(field.ident.as_ref().unwrap().clone());
 
-                    if let Some(expr_call) = attributes.construct_with {
-                        let ts = replace_function_call_arguments(expr_call).into_token_stream();
+                    if let Some(mut expr) = attributes.construct_with {
+                        let mut transform_idents = TransformIdents::new();
+                        transform_idents.visit_expr_mut(&mut expr);
+                        
+                        let ts = expr.into_token_stream();
                         parse_exprs.push(quote_spanned! {
                             field.span() => #ts
                         });
@@ -98,7 +104,7 @@ fn parse_fields(data: &Data) -> (Vec<Ident>, Vec<proc_macro2::TokenStream>) {
 
 #[derive(Debug)]
 struct FieldAttributes {
-    construct_with: Option<ExprCall>,
+    construct_with: Option<Expr>,
 }
 
 fn parse_attributes(attrs: &[Attribute]) -> FieldAttributes {
@@ -119,11 +125,7 @@ fn parse_attributes(attrs: &[Attribute]) -> FieldAttributes {
                                     match meta_name_value.lit {
                                         Lit::Str(ref lit_str) => {
                                             let expr: Expr = parse_str(&lit_str.value()).unwrap();
-                                            let expr_call = match expr {
-                                                Expr::Call(expr_call) => expr_call,
-                                                _ => panic!("construct_with must be a function call expression!"),
-                                            };
-                                            attributes.construct_with = Some(expr_call);
+                                            attributes.construct_with = Some(expr);
                                         }
                                         _ => panic!(
                                             "construct_with must be a function call expression!"
@@ -141,31 +143,4 @@ fn parse_attributes(attrs: &[Attribute]) -> FieldAttributes {
     }
 
     attributes
-}
-
-fn replace_function_call_arguments(mut expr_call: ExprCall) -> ExprCall {
-    let original_args = std::mem::replace(&mut expr_call.args, punctuated::Punctuated::new());
-
-    for arg in original_args.iter() {
-        let path = match arg {
-            Expr::Path(path) => &path.path,
-            _ => panic!("Only basic identifiers are supported as function arguments!"),
-        };
-
-        assert_eq!(
-            1,
-            path.segments.len(),
-            "Only basic identifiers are supported as function arguments!"
-        );
-
-        for segment in path.segments.iter() {
-            let ident = segment.ident.to_string();
-            let ts = quote!(captures.name(#ident).unwrap().as_str().parse()?);
-            let expr: Expr = parse2(ts).unwrap();
-            expr_call.args.push(expr);
-            break;
-        }
-    }
-
-    expr_call
 }
