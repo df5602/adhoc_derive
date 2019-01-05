@@ -13,6 +13,12 @@ pub fn from_str_derive(input: DeriveInput) -> TokenStream {
 
     let (regex_string, _regex_span) = extract_regex(&input.attrs);
 
+    // Validate regex
+    match regex::Regex::new(&regex_string) {
+        Ok(_) => {}
+        Err(e) => panic!("Invalid regex: {:?}", e),
+    }
+
     let (field_ident, parse_expr) = parse_fields(&input.data);
 
     let result = quote! {
