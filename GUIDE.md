@@ -110,7 +110,40 @@ struct Sum {
 let sum: Sum = "sum from 1 to 10".parse().unwrap();
 assert_eq!(45, sum.sum);
 ```
-Notes:
+#### Notes
 * Each "leaf identifier" (e.g. function arguments, but not e.g. function names) needs to correspond to a named capture group in the regex.
 * This only works for somewhat "simple" expressions, e.g. array syntax, function calls, tuples, binary/unary operations, if/else expressions etc. More complex expressions, especially those that create new local bindings (e.g. loops, match expressions, closures, `let` statements in blocks, etc.), are not possible at the moment.
 * Refer to [tests/construct_with.rs](https://github.com/df5602/adhoc_derive/blob/master/tests/construct_with.rs) for more examples of possible initializer expressions.
+
+#### Use type ascription syntax to help with type inference
+Sometimes it's not possible to infer the receiver type from the given expression. In these cases, an identifier can be explicitly annotated with a type:
+```
+#[derive(FromStr)]
+#[adhoc(regex = r"^(?P<a>\d+) \+ (?P<b>\d+)$")]
+struct Sum {
+    #[adhoc(construct_with = "a: u8 + b: u8")]
+    sum: u8,
+}
+
+let sum: Sum = "12 + 15".parse().unwrap();
+assert_eq!(27, sum.sum);
+```
+
+#### Special case: `&str`
+The implementation is depending on the fact that each receiver type implements `std::str::FromStr`. This is not the case for `&str`. If you run into the error "the trait `std::str::FromStr` is not implemented for `&str`", use type ascription to signal to the macro that the type is `&str`. In this case, the macro will not try to parse a `&str` from a `&str`. Instead, you can use the `&str` directly:
+```
+fn add_subject(subj: &str) -> String {
+    let mut s = String::from("Hello, ");
+    s.push_str(subj);
+    s
+}
+
+#[derive(FromStr)]
+#[adhoc(regex = r"^Hello: (?P<subject>.+)$")]
+struct HelloSubject {
+    #[adhoc(construct_with = "add_subject(subject: &str)")]
+    s: String,
+}
+
+let hello: HelloSubject = "Hello: World".parse().unwrap();
+assert_eq!("Hello, World", hello.s);
