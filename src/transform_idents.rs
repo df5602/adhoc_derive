@@ -21,7 +21,6 @@ use syn::*;
 //
 // Future extensions:
 // * use_as_str attribute: FromStr is not implemented for &str. If a parameter is annotated with use_as_str, don't call parse(), but use &str directly
-// * parse_as attribute: In case type inference fails
 // * Semantic analysis: see above
 // * Macros?
 
