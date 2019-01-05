@@ -376,3 +376,22 @@ fn construct_with_try_expr() {
     let t: Try = "number is 65".parse().unwrap();
     assert_eq!(65, t.inner);
 }
+
+#[test]
+fn construct_with_ref_str() {
+    fn add_subject(subj: &str) -> String {
+        let mut s = String::from("Hello, ");
+        s.push_str(subj);
+        s
+    }
+
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^Hello: (?P<subject>.+)$")]
+    struct HelloSubject {
+        #[adhoc(construct_with = "add_subject(subject: &str)")]
+        s: String,
+    }
+
+    let hello: HelloSubject = "Hello: World".parse().unwrap();
+    assert_eq!("Hello, World", hello.s);
+}

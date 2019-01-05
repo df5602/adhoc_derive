@@ -20,7 +20,6 @@ use syn::*;
 // Finally, macros don't work as of yet.
 //
 // Future extensions:
-// * use_as_str attribute: FromStr is not implemented for &str. If a parameter is annotated with use_as_str, don't call parse(), but use &str directly
 // * Semantic analysis: see above
 // * Macros?
 
@@ -261,7 +260,23 @@ impl VisitMut for TransformIdents {
                 if self.debug {
                     println!("Ascribed type: {:?}", ty);
                 }
-                quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse::<#ty>()?)
+
+                let mut ty_is_str_ref = false;
+                if let Type::Reference(ref ty_ref) = ty {
+                    if let Type::Path(ref path) = *ty_ref.elem {
+                        ty_is_str_ref = path.path.is_ident("str");
+                    }
+                }
+
+                if ty_is_str_ref && self.debug {
+                    println!("Ascribed type is &str");
+                }
+
+                if ty_is_str_ref {
+                    quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str())
+                } else {
+                    quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse::<#ty>()?)
+                }
             } else {
                 quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse()?)
             };
