@@ -20,6 +20,24 @@ pub fn from_str_derive(input: DeriveInput) -> TokenStream {
             type Err = Box<std::error::Error>;
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
+                struct RegexExtractor<'a> {
+                    captures: regex::Captures<'a>,
+                }
+
+                impl<'a> RegexExtractor<'a> {
+                    fn new(captures: regex::Captures<'a>) -> Self {
+                        Self { captures }
+                    }
+
+                    fn extract(&self, name: &str) -> std::result::Result<&str, String> {
+                        Ok(self
+                            .captures
+                            .name(name)
+                            .ok_or_else(|| format!("no capture group named {}", name))?
+                            .as_str())
+                    }
+                }
+
                 lazy_static::lazy_static! {
                     static ref RE: regex::Regex = regex::Regex::new(#regex_string).unwrap();
                 }
@@ -30,6 +48,8 @@ pub fn from_str_derive(input: DeriveInput) -> TokenStream {
                         return Err("input does not match expected format".into());
                     }
                 };
+
+                let extractor = RegexExtractor::new(captures);
 
                 Ok(Self{#(#field_ident: #parse_expr,)*})
             }
@@ -83,14 +103,14 @@ fn parse_fields(data: &Data) -> (Vec<Ident>, Vec<proc_macro2::TokenStream>) {
                     if let Some(mut expr) = attributes.construct_with {
                         let mut transform_idents = TransformIdents::new();
                         transform_idents.visit_expr_mut(&mut expr);
-                        
+
                         let ts = expr.into_token_stream();
                         parse_exprs.push(quote_spanned! {
                             field.span() => #ts
                         });
                     } else {
                         parse_exprs.push(quote_spanned! {
-                            field.span() => captures.name(#field_name).unwrap().as_str().parse()?
+                            field.span() => extractor.extract(#field_name)?.parse()?
                         });
                     }
                 }

@@ -273,12 +273,12 @@ impl VisitMut for TransformIdents {
                 }
 
                 if ty_is_str_ref {
-                    quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str())
+                    quote_spanned!(ident.span() => extractor.extract(#ident_as_string)?)
                 } else {
-                    quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse::<#ty>()?)
+                    quote_spanned!(ident.span() => extractor.extract(#ident_as_string)?.parse::<#ty>()?)
                 }
             } else {
-                quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse()?)
+                quote_spanned!(ident.span() => extractor.extract(#ident_as_string)?.parse()?)
             };
 
             let expr: Expr = parse2(ts).unwrap();
