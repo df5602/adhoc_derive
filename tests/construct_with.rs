@@ -187,7 +187,7 @@ fn construct_with_cast() {
     #[adhoc(regex = r"^number is (?P<a>\d+)$")]
     struct Cast {
         #[adhoc(construct_with = "a: u8 as i8")]
-        cast: i8
+        cast: i8,
     }
 
     let cast: Cast = "number is 15".parse().unwrap();
@@ -200,7 +200,7 @@ fn construct_with_if_else() {
     #[adhoc(regex = r"^maximum of (?P<a>\d+) and (?P<b>\d+)$")]
     struct Max {
         #[adhoc(construct_with = "if a: u8 > b: u8 { a } else { b }")]
-        max: u8
+        max: u8,
     }
 
     let max: Max = "maximum of 23 and 42".parse().unwrap();
@@ -226,7 +226,7 @@ fn construct_with_if_else_option() {
     #[adhoc(regex = r"^maybe (?P<a>-?\d+)\?$")]
     struct Maybe {
         #[adhoc(construct_with = "if a: i8 > 0 { Some(a) } else { None }")]
-        val: Option<u8>
+        val: Option<u8>,
     }
 
     let maybe: Maybe = "maybe 15?".parse().unwrap();
@@ -254,7 +254,7 @@ fn construct_with_range() {
     #[adhoc(regex = r"^sum from (?P<start>\d+) to (?P<stop>\d+)$")]
     struct Sum {
         #[adhoc(construct_with = "(start: u32..stop: u32).sum()")]
-        sum: u32
+        sum: u32,
     }
 
     let sum: Sum = "sum from 1 to 10".parse().unwrap();
