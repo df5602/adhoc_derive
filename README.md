@@ -8,7 +8,7 @@ Experimental: Derive FromStr impl based on regex provided via attribute
 Add the following in your Cargo.toml:
 ```
 [dependencies]
-adhoc_derive = "0.1.0"
+adhoc_derive = "0.1.1"
 lazy_static = "1.2.0"
 regex = "1.1.0"
 ```
