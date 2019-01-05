@@ -240,7 +240,7 @@ fn construct_with_block() {
     #[derive(FromStr)]
     #[adhoc(regex = r"^number is (?P<a>\d+)$")]
     struct Number {
-        #[adhoc(construct_with = "{ a: u32 }")]
+        #[adhoc(construct_with = "{ a }")]
         num: u32,
     }
 
