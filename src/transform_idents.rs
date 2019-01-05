@@ -1,13 +1,13 @@
-use syn::visit_mut::*;
+use quote::quote_spanned;
 use syn::punctuated::*;
 use syn::spanned::Spanned;
+use syn::visit_mut::*;
 use syn::*;
-use quote::quote_spanned;
 
 // Notes:
 // This visitor traverses a syntax tree and replaces all "leaf identifiers" (e.g. function arguments, but not function names) with an
 // expression that gets the correspondingly named capture group from the regex and parses it into the receiver type (needs type inference to work).
-// 
+//
 // Limitations:
 // This only works for somewhat "simple" expressions, e.g. array syntax, function calls, tuples, binary/unary operations, if expressions etc.
 // More complex expressions, e.g. loops, match expressions, closures, would require semantic analysis / construction of a symbol table to get right.
@@ -28,13 +28,15 @@ use quote::quote_spanned;
 #[derive(Debug)]
 pub struct TransformIdents {
     replaced_expression: Option<Expr>,
-    debug: bool
+    ascribed_type: Option<Type>,
+    debug: bool,
 }
 
 impl TransformIdents {
     pub fn new() -> Self {
         Self {
             replaced_expression: None,
+            ascribed_type: None,
             debug: false,
         }
     }
@@ -73,9 +75,9 @@ impl VisitMut for TransformIdents {
         match *expr_method_call.receiver {
             Expr::Paren(ref mut paren) => match *paren.expr {
                 Expr::Range(ref mut range) => self.visit_expr_range_mut(range),
-                _ => {},
-            }
-            _ => {},
+                _ => {}
+            },
+            _ => {}
         }
 
         for mut el in Punctuated::pairs_mut(&mut expr_method_call.args) {
@@ -140,6 +142,12 @@ impl VisitMut for TransformIdents {
         }
     }
 
+    fn visit_expr_type_mut(&mut self, expr_type: &mut ExprType) {
+        self.ascribed_type = Some(*expr_type.ty.clone());
+        self.visit_expr_mut(&mut *expr_type.expr);
+        self.ascribed_type = None;
+    }
+
     fn visit_expr_if_mut(&mut self, expr_if: &mut ExprIf) {
         self.visit_expr_mut(&mut *expr_if.cond);
         if let Some(expr) = self.replaced_expression.take() {
@@ -148,7 +156,7 @@ impl VisitMut for TransformIdents {
                 println!("Replace expression in <ExprIf:Cond>");
             }
         }
-        
+
         self.visit_block_mut(&mut expr_if.then_branch);
         if let Some(ref mut it) = expr_if.else_branch {
             self.visit_expr_mut(&mut *(it).1);
@@ -223,9 +231,11 @@ impl VisitMut for TransformIdents {
             // struct member. This expression needs to be parsed from the regex. In order for this to work, we need to re-add the colon.
             // In essence, we're transforming `Struct { x }` to `Struct { x: parse_expr("x") }`.
             if field_value.colon_token.is_none() {
-                field_value.colon_token = Some(syn::token::Colon { spans: [field_value.span()]});
+                field_value.colon_token = Some(syn::token::Colon {
+                    spans: [field_value.span()],
+                });
             }
-            if self. debug {
+            if self.debug {
                 println!("Replace expression in <FieldValue:Expr>");
             }
         }
@@ -248,7 +258,15 @@ impl VisitMut for TransformIdents {
             }
 
             let ident_as_string = ident.to_string();
-            let ts = quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse()?);
+            let ts = if let Some(ty) = self.ascribed_type.take() {
+                if self.debug {
+                    println!("Ascribed type: {:?}", ty);
+                }
+                quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse::<#ty>()?)
+            } else {
+                quote_spanned!(ident.span() => captures.name(#ident_as_string).unwrap().as_str().parse()?)
+            };
+
             let expr: Expr = parse2(ts).unwrap();
             self.replaced_expression = Some(expr);
         }

@@ -75,7 +75,7 @@ fn construct_with_method_call() {
     #[adhoc(regex = r"^add one to (?P<a>\d+)$")]
     struct AddOne {
         #[adhoc(construct_with = "ADDER.add(a, 1)")]
-        num: u8
+        num: u8,
     }
 
     let a: AddOne = "add one to 15".parse().unwrap();
@@ -88,7 +88,7 @@ fn construct_with_arrays() {
     #[adhoc(regex = r"^numbers: (?P<a>\d+), (?P<b>\d+), (?P<c>\d+), (?P<d>\d+)$")]
     struct Array {
         #[adhoc(construct_with = "[a, b, c, d]")]
-        arr: [u8; 4]
+        arr: [u8; 4],
     }
 
     let a: Array = "numbers: 4, 8, 15, 16".parse().unwrap();
@@ -105,7 +105,7 @@ fn construct_with_arrays_nested_function_calls() {
     #[adhoc(regex = r"^numbers: (?P<a>\d+), (?P<b>\d+), (?P<c>\d+), (?P<d>\d+)$")]
     struct Array {
         #[adhoc(construct_with = "[add(a, b), add(c, d)]")]
-        arr: [u8; 2]
+        arr: [u8; 2],
     }
 
     let a: Array = "numbers: 4, 8, 15, 16".parse().unwrap();
@@ -118,26 +118,25 @@ fn construct_with_tuple() {
     #[adhoc(regex = r"^(?P<a>\d+)/(?P<b>\d+)$")]
     struct Tuple {
         #[adhoc(construct_with = "(a, b)")]
-        tup: (u8, u8)
+        tup: (u8, u8),
     }
 
     let t: Tuple = "15/16".parse().unwrap();
     assert_eq!((15, 16), t.tup);
 }
 
-// The following doesn't work because type inference fails...
-// #[test]
-// fn construct_with_binary_expr() {
-//     #[derive(FromStr)]
-//     #[adhoc(regex = r"^(?P<a>\d+) + (?P<b>\d+)$")]
-//     struct Binary {
-//         #[adhoc(construct_with = "a + b")]
-//         sum: u8,
-//     }
+#[test]
+fn construct_with_binary_expr() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^(?P<a>\d+) \+ (?P<b>\d+)$")]
+    struct Binary {
+        #[adhoc(construct_with = "a: u8 + b: u8")]
+        sum: u8,
+    }
 
-//     let bin: Binary = "12 + 15".parse().unwrap();
-//     assert_eq!(17, bin.sum);
-// }
+    let bin: Binary = "12 + 15".parse().unwrap();
+    assert_eq!(27, bin.sum);
+}
 
 #[test]
 fn construct_with_unary_expr() {
@@ -145,71 +144,68 @@ fn construct_with_unary_expr() {
     #[adhoc(regex = r"^minus (?P<a>\d+)$")]
     struct Unary {
         #[adhoc(construct_with = "-a")]
-        negated: i8
+        negated: i8,
     }
 
     let unary: Unary = "minus 50".parse().unwrap();
     assert_eq!(-50, unary.negated);
 }
 
-// The following doesn't work because type inference fails...
-// #[test]
-// fn construct_with_literal() {
-//     #[derive(FromStr)]
-//     #[adhoc(regex = r"^add one to (?P<a>\d+)$")]
-//     struct AddOne {
-//         #[adhoc(construct_with = "a + 1")]
-//         num: u8,
-//     }
-
-//     let add_one: AddOne = "add one to 15".parse().unwrap();
-//     assert_eq!(16, add_one.num);
-// }
-
 #[test]
-fn construct_with_literal() {
-    fn add(a: u8, b: u8) -> u8 {
-        a + b
-    }
-    
+fn construct_with_literal_1() {
     #[derive(FromStr)]
     #[adhoc(regex = r"^add one to (?P<a>\d+)$")]
     struct AddOne {
-        #[adhoc(construct_with = "add(a, 1)")]
-        num: u8
+        #[adhoc(construct_with = "a: u8 + 1")]
+        num: u8,
     }
 
     let add_one: AddOne = "add one to 15".parse().unwrap();
     assert_eq!(16, add_one.num);
 }
 
-// The following doesn't work because type inference fails...
-// #[test]
-// fn construct_with_cast() {
-//     #[derive(FromStr)]
-//     #[adhoc(regex = r"^number is (?P<a>\d+)$")]
-//     struct Cast {
-//         #[adhoc(construct_with = "a as i8")]
-//         cast: i8
-//     }
+#[test]
+fn construct_with_literal_2() {
+    fn add(a: u8, b: u8) -> u8 {
+        a + b
+    }
 
-//     let cast: Cast = "number is 15".parse().unwrap();
-//     assert_eq!(15, cast.cast);
-// }
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^add one to (?P<a>\d+)$")]
+    struct AddOne {
+        #[adhoc(construct_with = "add(a, 1)")]
+        num: u8,
+    }
 
-// The following doesn't work because type inference fails...
-// #[test]
-// fn construct_with_if_else() {
-//     #[derive(FromStr)]
-//     #[adhoc(regex = r"^maximum of (?P<a>\d+) and (?P<b>\d+)$")]
-//     struct Max {
-//         #[adhoc(construct_with = "if a > b { a } else { b }")]
-//         max: u8
-//     }
+    let add_one: AddOne = "add one to 15".parse().unwrap();
+    assert_eq!(16, add_one.num);
+}
 
-//     let max: Max = "maximum of 23 and 42".parse().unwrap();
-//     assert_eq!(42, max.max);
-// }
+#[test]
+fn construct_with_cast() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^number is (?P<a>\d+)$")]
+    struct Cast {
+        #[adhoc(construct_with = "a: u8 as i8")]
+        cast: i8
+    }
+
+    let cast: Cast = "number is 15".parse().unwrap();
+    assert_eq!(15, cast.cast);
+}
+
+#[test]
+fn construct_with_if_else() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^maximum of (?P<a>\d+) and (?P<b>\d+)$")]
+    struct Max {
+        #[adhoc(construct_with = "if a: u8 > b: u8 { a } else { b }")]
+        max: u8
+    }
+
+    let max: Max = "maximum of 23 and 42".parse().unwrap();
+    assert_eq!(42, max.max);
+}
 
 #[test]
 fn construct_with_if_else_bool() {
@@ -217,53 +213,53 @@ fn construct_with_if_else_bool() {
     #[adhoc(regex = r"^maybe (?P<a>true|false)\?$")]
     struct Maybe {
         #[adhoc(construct_with = "if a { true } else { false }")]
-        val: bool
+        val: bool,
     }
 
     let maybe: Maybe = "maybe true?".parse().unwrap();
     assert_eq!(true, maybe.val);
 }
 
-// The following doesn't work because type inference fails...
-// #[test]
-// fn construct_with_if_else_Option() {
-//     #[derive(FromStr)]
-//     #[adhoc(regex = r"^maybe (?P<a>\d+)\?$")]
-//     struct Maybe {
-//         #[adhoc(construct_with = "if a > 0 { Some(a) } else { None }")]
-//         val: Option<u8>
-//     }
+#[test]
+fn construct_with_if_else_option() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^maybe (?P<a>-?\d+)\?$")]
+    struct Maybe {
+        #[adhoc(construct_with = "if a: i8 > 0 { Some(a) } else { None }")]
+        val: Option<u8>
+    }
 
-//     let maybe: Maybe = "maybe 15?".parse().unwrap();
-//     assert_eq!(Some(15), maybe.val);
-// }
+    let maybe: Maybe = "maybe 15?".parse().unwrap();
+    assert_eq!(Some(15), maybe.val);
+    let or_not: Maybe = "maybe -26?".parse().unwrap();
+    assert_eq!(None, or_not.val);
+}
 
 #[test]
 fn construct_with_block() {
     #[derive(FromStr)]
     #[adhoc(regex = r"^number is (?P<a>\d+)$")]
     struct Number {
-        #[adhoc(construct_with = "{ a }")]
-        num: u32
+        #[adhoc(construct_with = "{ a: u32 }")]
+        num: u32,
     }
 
     let number: Number = "number is 6".parse().unwrap();
     assert_eq!(6, number.num);
 }
 
-// The following doesn't work because type inference fails...
-// #[test]
-// fn construct_with_range() {
-//     #[derive(FromStr)]
-//     #[adhoc(regex = r"^sum from (?P<start>\d+) to (?P<stop>\d+)$")]
-//     struct Sum {
-//         #[adhoc(construct_with = "(start..stop).sum()")]
-//         sum: u32
-//     }
+#[test]
+fn construct_with_range() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^sum from (?P<start>\d+) to (?P<stop>\d+)$")]
+    struct Sum {
+        #[adhoc(construct_with = "(start: u32..stop: u32).sum()")]
+        sum: u32
+    }
 
-//     let sum: Sum = "sum from 1 to 10".parse().unwrap();
-//     assert_eq!(45, sum.sum);
-// }
+    let sum: Sum = "sum from 1 to 10".parse().unwrap();
+    assert_eq!(45, sum.sum);
+}
 
 #[test]
 fn construct_with_ref() {
@@ -275,7 +271,7 @@ fn construct_with_ref() {
     #[adhoc(regex = r"^(?P<a>\d+) \+ (?P<b>\d+)$")]
     struct Add {
         #[adhoc(construct_with = "add(&a, &b)")]
-        num: u8
+        num: u8,
     }
 
     let a: Add = "1 + 2".parse().unwrap();
@@ -330,7 +326,7 @@ fn construct_with_struct_rest() {
     struct Inner {
         a: u8,
         b: u8,
-        d: u8
+        d: u8,
     }
 
     #[derive(FromStr)]
@@ -354,7 +350,7 @@ fn construct_with_paren() {
     #[adhoc(regex = r"^number is (?P<a>\d+)$")]
     struct Number {
         #[adhoc(construct_with = "( a )")]
-        num: u32
+        num: u32,
     }
 
     let number: Number = "number is 6".parse().unwrap();
@@ -374,7 +370,7 @@ fn construct_with_try_expr() {
     #[adhoc(regex = r"^number is (?P<a>\d+)$")]
     struct Try {
         #[adhoc(construct_with = "try_parse(a)?")]
-        inner: u8
+        inner: u8,
     }
 
     let t: Try = "number is 65".parse().unwrap();
