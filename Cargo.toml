@@ -1,6 +1,6 @@
 [package]
 name = "adhoc_derive"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Dominik Fankhauser <dominik@fankhausers.ch>"]
 license = "MIT"
 description = "Derive FromStr impl based on regex provided via attribute"
