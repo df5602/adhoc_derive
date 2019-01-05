@@ -48,8 +48,10 @@ assert_eq!(5, rect.rect.width);
 assert_eq!(4, rect.rect.height);
 ```
 
-### Using constructor functions to initialize fields
-Sometimes it may be undesireable or impossible to add a custom `std::str::FromStr` implementation for a contained struct (the struct may be defined in a different crate, for example). In these cases it's also possible to use the `construct_with` attribute to provide a function to initialize the field:
+### Using `construct_with` attribute to initialize fields
+Sometimes it may be undesireable or impossible to add a custom `std::str::FromStr` implementation for a contained struct (the struct may be defined in a different crate, for example). Other times, you may want to pre-process the values extracted from the regex, before you initialize a field. In these cases it's also possible to use the `construct_with` attribute to provide an expression to initialize the field:
+
+#### Example: use `construct_with` to initialize nested struct
 ```
 struct InnerRectangle {
     x: usize,
@@ -84,11 +86,31 @@ assert_eq!(2, rect.rect.y);
 assert_eq!(5, rect.rect.width);
 assert_eq!(4, rect.rect.height);
 ```
+#### Example: use `construct_with` to initialize array
+```
+#[derive(FromStr)]
+#[adhoc(regex = r"^numbers: (?P<a>\d+), (?P<b>\d+), (?P<c>\d+), (?P<d>\d+)$")]
+struct Array {
+    #[adhoc(construct_with = "[a, b, c, d]")]
+    arr: [u8; 4],
+}
+
+let a: Array = "numbers: 4, 8, 15, 16".parse().unwrap();
+assert_eq!([4, 8, 15, 16], a.arr);
+```
+#### Example: use `construct_with` to compute a value to initialize field
+```
+#[derive(FromStr)]
+#[adhoc(regex = r"^sum from (?P<start>\d+) to (?P<stop>\d+)$")]
+struct Sum {
+    #[adhoc(construct_with = "(start: u32..stop: u32).sum()")]
+    sum: u32,
+}
+
+let sum: Sum = "sum from 1 to 10".parse().unwrap();
+assert_eq!(45, sum.sum);
+```
 Notes:
-* The `construct_with` attribute must be a valid function call expression.
-* Arguments can only be identifiers, e.g. the following don't work:
-  * `#[adhoc(construct_with = "some_function(x / 2, y / 2)")]`
-  * `#[adhoc(construct_with = "some_function(Some(x), y)")]`
-* Each argument needs to correspond to a named capture group in the regex.
-* It's also possible to provide a function without arguments, e.g.:
-  * `#[adhoc(construct_with = "Default::default()")]`
+* Each "leaf identifier" (e.g. function arguments, but not e.g. function names) needs to correspond to a named capture group in the regex.
+* This only works for somewhat "simple" expressions, e.g. array syntax, function calls, tuples, binary/unary operations, if/else expressions etc. More complex expressions, especially those that create new local bindings (e.g. loops, match expressions, closures, `let` statements in blocks, etc.), are not possible at the moment.
+* Refer to [tests/construct_with.rs](https://github.com/df5602/adhoc_derive/blob/master/tests/construct_with.rs) for more examples of possible initializer expressions.
