@@ -47,3 +47,24 @@ fn derive_nested_struct() {
     assert_eq!(5, rect.rect.width);
     assert_eq!(4, rect.rect.height);
 }
+
+#[test]
+fn derive_tuple_struct() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^(?P<__0>\d+) m/s$")]
+    struct Velocity(u32);
+
+    let vel: Velocity = "25 m/s".parse().unwrap();
+    assert_eq!(25, vel.0);
+}
+
+#[test]
+fn derive_tuple_struct_multiple_fields() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^\((?P<__0>\d+),(?P<__1>\d+)\)$")]
+    struct Tuple(u32, u32);
+
+    let tuple: Tuple = "(12,13)".parse().unwrap();
+    assert_eq!(12, tuple.0);
+    assert_eq!(13, tuple.1);
+}
