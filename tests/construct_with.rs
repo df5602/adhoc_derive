@@ -395,3 +395,31 @@ fn construct_with_ref_str() {
     let hello: HelloSubject = "Hello: World".parse().unwrap();
     assert_eq!("Hello, World", hello.s);
 }
+
+#[test]
+fn construct_with_tuple_struct() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^(?P<vel>\d+) (?P<unit>.+)$")]
+    struct Velocity(
+        #[adhoc(
+            construct_with = r#"if unit: &str == "m/s" { vel } else if unit: &str == "km/h" { (vel: f32 / 3.6) as u32 } else { 0 } "#
+        )]
+        u32,
+    );
+
+    let vel_ms: Velocity = "50 m/s".parse().unwrap();
+    let vel_kmh: Velocity = "50 km/h".parse().unwrap();
+    assert_eq!(50, vel_ms.0);
+    assert_eq!(13, vel_kmh.0);
+}
+
+#[test]
+fn construct_with_tuple_struct_mixed() {
+    #[derive(FromStr)]
+    #[adhoc(regex = r"^(?P<0>\d+): (?P<a>\d+) \+ (?P<b>\d+)$")]
+    struct Foo(u32, #[adhoc(construct_with = "a: u32 + b: u32")] u32);
+
+    let foo: Foo = "2: 4 + 5".parse().unwrap();
+    assert_eq!(2, foo.0);
+    assert_eq!(9, foo.1);
+}
