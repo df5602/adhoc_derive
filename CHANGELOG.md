@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Implement macro for tuple structs ([a734413](https://github.com/df5602/adhoc_derive/commit/a734413df1123019c881c7a738b18e0ffcaecfb3), [34d1fde](https://github.com/df5602/adhoc_derive/commit/34d1fdec8df6dfedea933377f52d0e0697e82304), [2a05ae3](https://github.com/df5602/adhoc_derive/commit/2a05ae3475d05553702d54adca21055993b725ac)).
+
 ## [0.1.1] - 2019-01-05
 ### Changed
 - Allow more expressions in `construct_with` attribute ([4873afb](https://github.com/df5602/adhoc_derive/commit/4873afb4c4c4eb61fb2065a91294414b6ed65c78)).
