@@ -8,13 +8,23 @@ pub fn replace_numbered_capture_groups(regex: &mut String) -> Result<(), Error> 
             Ok(_) => return Ok(()),
             Err(e) => {
                 if *e.kind() == ErrorKind::GroupNameInvalid {
-                    e.span().start.offset
+                    let span = e.span();
+                    if (&regex[span.start.offset..span.end.offset])
+                        .chars()
+                        .all(|c| c.is_ascii_digit())
+                    {
+                        span.start.offset
+                    } else {
+                        // Invalid character other than digit, abort
+                        return Err(e);
+                    }
                 } else {
                     // Other parse error, abort
                     return Err(e);
                 }
             }
         };
+
         regex.insert_str(error_offset, "__");
     }
 }
@@ -72,5 +82,11 @@ mod test_replace {
         let mut regex = String::from(r"^(?P<2>\(?P<0>\d+\): (?P<a>\d+))$");
         replace_numbered_capture_groups(&mut regex).unwrap();
         assert_eq!(r"^(?P<__2>\(?P<0>\d+\): (?P<a>\d+))$", regex);
+    }
+
+    #[test]
+    fn named_capture_group_error_invalid_character() {
+        let mut regex = String::from(r"^(?P<ab?>\d+)$");
+        assert!(replace_numbered_capture_groups(&mut regex).is_err());
     }
 }
