@@ -31,6 +31,7 @@ use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
 mod adhoc;
+mod regex;
 mod transform_idents;
 
 #[proc_macro_derive(FromStr, attributes(adhoc))]

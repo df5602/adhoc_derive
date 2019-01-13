@@ -21,12 +21,12 @@ fn from_str_derive_struct(input: DeriveInput) -> TokenStream {
     let name = input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
-    let (regex_string, _regex_span) = extract_regex(&input.attrs);
+    let (mut regex_string, _regex_span) = extract_regex(&input.attrs);
 
-    // Validate regex
-    match regex::Regex::new(&regex_string) {
+    // Validate regex and replace explicitly numbered capture groups
+    match crate::regex::replace_numbered_capture_groups(&mut regex_string) {
         Ok(_) => {}
-        Err(e) => panic!("Invalid regex: {:?}", e),
+        Err(e) => panic!("Invalid regex: {}", e),
     }
 
     let (field_idents, parse_expressions) = parse_fields(&input.data);
