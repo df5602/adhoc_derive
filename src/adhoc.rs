@@ -119,6 +119,7 @@ fn from_str_derive_enum(input: DeriveInput) -> TokenStream {
     let regexes: Vec<&String> = variants.iter_mut().map(|v| &v.regex).collect();
 
     let result = quote! {
+        #[allow(clippy::trivial_regex)]
         impl #impl_generics std::str::FromStr for #name #ty_generics #where_clause {
             type Err = Box<std::error::Error>;
 
