@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Implement macro for tuple structs ([a734413](https://github.com/df5602/adhoc_derive/commit/a734413df1123019c881c7a738b18e0ffcaecfb3), [34d1fde](https://github.com/df5602/adhoc_derive/commit/34d1fdec8df6dfedea933377f52d0e0697e82304), [2a05ae3](https://github.com/df5602/adhoc_derive/commit/2a05ae3475d05553702d54adca21055993b725ac)).
+- Implement macro for enums ([4e0aa00](https://github.com/df5602/adhoc_derive/commit/4e0aa00ffdb553f15c22f381948a4f84d3897b16)).
 
 ## [0.1.1] - 2019-01-05
 ### Changed
