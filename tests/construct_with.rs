@@ -423,3 +423,42 @@ fn construct_with_tuple_struct_mixed() {
     assert_eq!(2, foo.0);
     assert_eq!(9, foo.1);
 }
+
+#[test]
+fn construct_with_enum() {
+    #[derive(Debug, PartialEq, FromStr)]
+    enum Expression {
+        #[adhoc(regex = "^$")]
+        Empty,
+        #[adhoc(regex = r"^(?P<0>\d+)$")]
+        Number(u32),
+        #[adhoc(regex = r"^(?P<a>\d+)\+(?P<b>\d+)$")]
+        Sum(#[adhoc(construct_with = "a: u32 + b: u32")] u32),
+        #[adhoc(regex = r"^max\((?P<op1>\d+),(?P<op2>\d+)\)$")]
+        Max {
+            op1: u32,
+            op2: u32,
+            #[adhoc(construct_with = "if op1: u32 > op2: u32 { op1 } else { op2 }")]
+            max: u32,
+        },
+    }
+
+    let empty: Expression = "".parse().unwrap();
+    assert_eq!(Expression::Empty, empty);
+
+    let number: Expression = "143".parse().unwrap();
+    assert_eq!(Expression::Number(143), number);
+
+    let sum: Expression = "15+16".parse().unwrap();
+    assert_eq!(Expression::Sum(31), sum);
+
+    let max: Expression = "max(3,4)".parse().unwrap();
+    assert_eq!(
+        Expression::Max {
+            op1: 3,
+            op2: 4,
+            max: 4
+        },
+        max
+    );
+}
