@@ -60,6 +60,31 @@ assert_eq!(12, tuple.0);
 assert_eq!(13, tuple.1);
 ```
 
+## Enums
+Enums work similar to structs, with one exception: Instead of annotating the whole struct with a regex, each variant of the enum needs to have a `regex` attribute. The first regex that matches determines which variant is instantiated.
+
+If an enum variant contains fields, the same rules apply as with structs:
+```
+#[derive(Debug, PartialEq, FromStr)]
+enum Foo {
+    #[adhoc(regex = r"^bar$")]
+    Bar,
+    #[adhoc(regex = r"^baz (?P<0>\d+)$")]
+    Baz(u32),
+    #[adhoc(regex = r"^quux (?P<a>\d+) (?P<b>\d+)$")]
+    Quux { a: u32, b: u32 },
+}
+
+let bar: Foo = "bar".parse().unwrap();
+assert_eq!(Foo::Bar, bar);
+
+let baz: Foo = "baz 15".parse().unwrap();
+assert_eq!(Foo::Baz(15), baz);
+
+let quux: Foo = "quux 4 8".parse().unwrap();
+assert_eq!(Foo::Quux { a: 4, b: 8 }, quux);
+```
+
 ## Using `construct_with` attribute to initialize fields
 Sometimes it may be undesireable or impossible to add a custom `std::str::FromStr` implementation for a contained struct (the struct may be defined in a different crate, for example). Other times, you may want to pre-process the values extracted from the regex, before you initialize a field. In these cases it's also possible to use the `construct_with` attribute to provide an expression to initialize the field:
 
